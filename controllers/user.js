@@ -1,5 +1,5 @@
-const jwt = require("jsonwebtoken");
 const UserModel = require("../models/User");
+const userUtils = require("../utils/user");
 
 module.exports = {
   create: function(req, res, next) {
@@ -21,22 +21,20 @@ module.exports = {
     );
   },
   authenticate: function(req, res, next) {
+    console.log("req.body", req.body);
+    if (!req.body.email || !req.body.password) return res.send("EMPTY_FIELDS");
     UserModel.findOne({ email: req.body.email }, function(err, user) {
       if (err) {
         next(err);
       } else {
         user.comparePassword(req.body.password, function(err, isMatch) {
           if (isMatch) {
-            const token = jwt.sign({ id: user._id }, req.app.get("secretKey"), {
-              expiresIn: "1d"
-            });
-            delete user.password;
             res.json({
               status: "success",
               message: "user found!!!",
               data: {
-                user: { email: user.email, fullName: user.fullName },
-                token: token
+                user: userUtils.getCleanUser(user),
+                token: userUtils.generateToken(user)
               }
             });
           } else {

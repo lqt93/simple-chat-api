@@ -2,16 +2,16 @@ const app = require("express")();
 const http = require("http").createServer(app);
 const io = require("socket.io")(http);
 const bodyParser = require("body-parser");
+const cors = require("cors");
 const config = require("./config");
 
 // Initialize database connector
 const Database = require("./Database");
 
-// Set JWT token
+// Validate JWT token
 const jwt = require("jsonwebtoken");
-app.set("secretKey", config.JWT_SECRET); // jwt secret token
 function validateUser(req, res, next) {
-  jwt.verify(req.headers["x-access-token"], req.app.get("secretKey"), function(
+  jwt.verify(req.headers["x-access-token"], config.JWT_SECRET, function(
     err,
     decoded
   ) {
@@ -25,8 +25,16 @@ function validateUser(req, res, next) {
   });
 }
 
+// Apply CORS
+app.use(cors());
+
 // Parsing request's body
-app.use(bodyParser({ extended: false }));
+app.use(bodyParser.json());
+app.use(
+  bodyParser.urlencoded({
+    extended: false
+  })
+);
 
 // Routes
 app.use("/users", require("./routes/users"));
