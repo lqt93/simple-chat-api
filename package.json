@@ -4,14 +4,15 @@
   "description": "A simple API for chatting app",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon NODE_ENV=development index.js",
-    "start": "nodemon NODE_ENV=production index.js"
+    "dev": "NODE_ENV=development node index.js",
+    "start": "NODE_ENV=production node index.js"
   },
   "author": "Thinh Le",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^3.0.6",
     "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
     "express": "^4.16.4",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.5.5",
