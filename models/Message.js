@@ -2,8 +2,11 @@ const mongoose = require("mongoose");
 const timestampPlugin = require("./plugins/timestamp");
 
 let messageSchema = new mongoose.Schema({
-  type: String,
-  text: String,
+  type: {
+    type: String,
+    default: "text"
+  },
+  value: String,
   room: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Room"
