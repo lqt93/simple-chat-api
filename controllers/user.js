@@ -15,7 +15,7 @@ module.exports = {
           res.json({
             status: "success",
             message: "User added successfully!!!",
-            data: null
+            value: null
           });
       }
     );
@@ -32,16 +32,16 @@ module.exports = {
             res.json({
               status: "success",
               message: "user found!!!",
-              data: {
+              value: {
                 user: userUtils.getCleanUser(user),
                 token: userUtils.generateToken(user)
               }
             });
           } else {
-            res.json({
+            res.status(400).json({
               status: "error",
               message: "Invalid email/password!!!",
-              data: null
+              value: null
             });
           }
         });

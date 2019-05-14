@@ -3,27 +3,10 @@ const http = require("http").createServer(app);
 const io = require("socket.io")(http);
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const config = require("./config");
+const UserHelpers = require("./helpers/user");
 
 // Initialize database connector
 const Database = require("./Database");
-
-// Validate JWT token
-const jwt = require("jsonwebtoken");
-function validateUser(req, res, next) {
-  jwt.verify(req.headers["x-access-token"], config.JWT_SECRET, function(
-    err,
-    decoded
-  ) {
-    if (err) {
-      res.json({ status: "error", message: err.message, data: null });
-    } else {
-      // add user id to request
-      req.body.userId = decoded.id;
-      next();
-    }
-  });
-}
 
 // Apply CORS
 app.use(cors());
@@ -38,6 +21,8 @@ app.use(
 
 // Routes
 app.use("/users", require("./routes/users"));
+app.use("/rooms", UserHelpers.validateUser, require("./routes/rooms"));
+app.use("/messages", UserHelpers.validateUser, require("./routes/messages"));
 
 // UI experiment
 app.get("/experiment", (req, res) => {

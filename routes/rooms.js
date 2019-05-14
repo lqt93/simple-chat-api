@@ -1,10 +1,12 @@
-const RoomModel = require("../models/Room");
+// Routes for Room model
+const express = require("express");
+const router = express.Router();
+const roomController = require("../controllers/room");
 
-module.exports = app => {
-  app.get(
-    "/auth/google",
-    passport.authenticate("google", {
-      scope: ["profile", "email"]
-    })
-  );
-};
+router.get("/public", roomController.getPublicRooms);
+router.get("/:id/messages", roomController.getMessages);
+router.post("/", roomController.create);
+router.put("/", roomController.edit);
+router.delete("/", roomController.delete);
+
+module.exports = router;
