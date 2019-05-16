@@ -3,7 +3,7 @@ const validator = require("validator");
 const bcrypt = require("bcrypt");
 const uniqueValidator = require("mongoose-unique-validator");
 const timestampPlugin = require("./plugins/timestamp");
-const userHashPassword = require("./plugins/userHashPassword");
+const userPlugins = require("./plugins/userHashPassword");
 
 let userSchema = new mongoose.Schema({
   email: {
@@ -23,7 +23,8 @@ let userSchema = new mongoose.Schema({
 });
 
 userSchema.plugin(uniqueValidator, { message: "is already taken." });
-userSchema.plugin(userHashPassword);
+userSchema.plugin(userPlugins.setFullName);
+userSchema.plugin(userPlugins.hashPassword);
 userSchema.plugin(timestampPlugin);
 
 userSchema.methods.comparePassword = function(candidatePassword, cb) {
