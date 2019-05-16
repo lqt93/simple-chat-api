@@ -4,6 +4,7 @@ const router = express.Router();
 const roomController = require("../controllers/room");
 
 router.get("/public", roomController.getPublicRooms);
+router.get("/:id", roomController.getRoomInfo);
 router.get("/:id/messages", roomController.getMessages);
 router.post("/", roomController.create);
 router.put("/", roomController.edit);

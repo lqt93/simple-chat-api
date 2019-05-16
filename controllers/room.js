@@ -2,6 +2,32 @@ const RoomModel = require("../models/Room");
 const MessageModel = require("../models/Message");
 
 module.exports = {
+  getRoomInfo: function(req, res, next) {
+    const roomId = req.params.id;
+    if (!roomId)
+      return res.status(400).json({
+        status: "error",
+        message: "Require room's id",
+        value: null
+      });
+    RoomModel.findOne(
+      {
+        _id: roomId
+      },
+      "type _id name",
+      function(err, result) {
+        if (err) next(err);
+        else
+          res.json({
+            status: "success",
+            message: "Found Room",
+            value: {
+              room: result
+            }
+          });
+      }
+    );
+  },
   getMessages: function(req, res, next) {
     const roomId = req.params.id;
     if (!roomId)
@@ -14,8 +40,10 @@ module.exports = {
       {
         room: roomId
       },
-      "type _id value",
-      function(err, result) {
+      "type _id value"
+    )
+      .populate("owner")
+      .exec(function(err, result) {
         if (err) next(err);
         else
           res.json({
@@ -25,8 +53,7 @@ module.exports = {
               messages: result
             }
           });
-      }
-    );
+      });
   },
   getPublicRooms: function(req, res, next) {
     RoomModel.find(
