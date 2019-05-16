@@ -11,7 +11,7 @@ module.exports = {
         res.json({ status: "error", message: err.message, value: null });
       } else {
         // add user id to request
-        req.body.userId = decoded.id;
+        req.body.userId = decoded._id;
         next();
       }
     });
