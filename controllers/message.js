@@ -18,12 +18,14 @@ module.exports = {
       },
       function(err, result) {
         if (err) next(err);
-        else
+        else {
+          req.io.sockets.to(req.body.roomId).emit("room_msg", result);
           res.json({
             status: "success",
             message: "Message created",
             value: null
           });
+        }
       }
     );
   },

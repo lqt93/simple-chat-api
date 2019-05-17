@@ -19,6 +19,13 @@ app.use(
   })
 );
 
+// Add Socket.Io
+app.use(function(req, res, next) {
+  req.io = io;
+  next();
+});
+require("./controllers/socket")(io);
+
 // Routes
 app.use("/users", require("./routes/users"));
 app.use("/rooms", UserHelpers.validateUser, require("./routes/rooms"));
@@ -27,17 +34,6 @@ app.use("/messages", UserHelpers.validateUser, require("./routes/messages"));
 // UI experiment
 app.get("/experiment", (req, res) => {
   res.sendFile(__dirname + "/client/index.html");
-});
-
-io.on("connection", socket => {
-  console.log("an user connected");
-  socket.on("chat message", msg => {
-    io.emit("chat message", msg);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("user disconnected");
-  });
 });
 
 http.listen(8000, () => {
