@@ -2,6 +2,13 @@ const UserModel = require("../models/User");
 const userUtils = require("../utils/user");
 
 module.exports = {
+  checkCurrentUser: function(req, res, next) {
+    res.json({
+      status: "success",
+      message: "User is logged in",
+      value: true
+    });
+  },
   create: function(req, res, next) {
     UserModel.create(
       {
