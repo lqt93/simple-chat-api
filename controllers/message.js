@@ -19,7 +19,9 @@ module.exports = {
       function(err, result) {
         if (err) next(err);
         else {
-          req.io.sockets.to(req.body.roomId).emit("room_msg", result);
+          result.populate("owner", "_id fullName", function(err2, newMsg) {
+            req.io.sockets.to(req.body.roomId).emit("room_msg", newMsg);
+          });
           res.json({
             status: "success",
             message: "Message created",
