@@ -36,6 +36,8 @@ app.get("/experiment", (req, res) => {
   res.sendFile(__dirname + "/client/index.html");
 });
 
-http.listen(8000, () => {
-  console.log("listening on *:8000");
+const PORT = process.env.PORT || 8000;
+
+http.listen(PORT, () => {
+  console.log(`listening on *:${PORT}`);
 });
