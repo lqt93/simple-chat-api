@@ -28,7 +28,7 @@ module.exports = {
       }
     );
   },
-  getMessages: function(req, res, next) {
+  getMessages: async function(req, res, next) {
     const roomId = req.params.id;
     if (!roomId)
       return res.status(400).json({
@@ -36,30 +36,34 @@ module.exports = {
         message: "Require room's id",
         value: null
       });
-    MessageModel.find(
-      {
-        room: roomId
-      },
-      "type _id value createdAt",
-      {
-        limit: 20,
-        sort: {
-          createdAt: 1
+    try {
+      const result = await MessageModel.find(
+        {
+          room: roomId
+        },
+        "type _id value createdAt",
+        {
+          limit: 20,
+          skip: parseInt(req.query.skip) || 0,
+          sort: {
+            createdAt: 1
+          }
         }
-      }
-    )
-      .populate("owner")
-      .exec(function(err, result) {
-        if (err) next(err);
-        else
-          res.json({
-            status: "success",
-            message: "Found messages",
-            value: {
-              messages: result
-            }
-          });
+      )
+        .populate("owner")
+        .exec();
+      const count = await MessageModel.count({ room: roomId }).exec();
+      res.json({
+        status: "success",
+        message: "Found messages",
+        value: {
+          messages: result,
+          count: count
+        }
       });
+    } catch (err) {
+      if (err) next(err);
+    }
   },
   getPublicRooms: function(req, res, next) {
     RoomModel.find(
