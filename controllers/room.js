@@ -40,7 +40,13 @@ module.exports = {
       {
         room: roomId
       },
-      "type _id value"
+      "type _id value createdAt",
+      {
+        limit: 20,
+        sort: {
+          createdAt: 1
+        }
+      }
     )
       .populate("owner")
       .exec(function(err, result) {
