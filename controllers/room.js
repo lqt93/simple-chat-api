@@ -37,22 +37,25 @@ module.exports = {
         value: null
       });
     try {
+      const sort = req.query.sort;
       const result = await MessageModel.find(
         {
           room: roomId
         },
         "type _id value createdAt",
         {
-          limit: 20,
+          limit: parseInt(req.query.limit) || null,
           skip: parseInt(req.query.skip) || 0,
-          sort: {
-            createdAt: 1
-          }
+          sort: sort
+            ? JSON.parse(req.query.sort)
+            : {
+                createdAt: 1
+              }
         }
       )
         .populate("owner")
         .exec();
-      const count = await MessageModel.count({ room: roomId }).exec();
+      const count = await MessageModel.countDocuments({ room: roomId }).exec();
       res.json({
         status: "success",
         message: "Found messages",
