@@ -1,4 +1,5 @@
 const app = require("express")();
+const dotenv = require("dotenv").config();
 const http = require("http").createServer(app);
 const io = require("socket.io")(http);
 const bodyParser = require("body-parser");
