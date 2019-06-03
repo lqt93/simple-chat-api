@@ -36,6 +36,12 @@ module.exports = {
       if (err) {
         next(err);
       } else {
+        if (!user)
+          return res.status(400).json({
+            status: "error",
+            message: "User not found",
+            value: null
+          });
         user.comparePassword(req.body.password, function(err, isMatch) {
           if (isMatch) {
             res.json({
