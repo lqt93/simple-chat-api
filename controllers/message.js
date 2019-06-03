@@ -1,5 +1,15 @@
 const MessageModel = require("../models/Message");
 
+const targetFields = [
+  "type",
+  "createdAt",
+  "updatedAt",
+  "owner",
+  "room",
+  "value",
+  "_id"
+];
+
 module.exports = {
   get: function(req, res, next) {},
   create: function(req, res, next) {
@@ -20,7 +30,12 @@ module.exports = {
         if (err) next(err);
         else {
           result.populate("owner", "_id fullName", function(err2, newMsg) {
-            req.io.sockets.to(req.body.roomId).emit("room_msg", newMsg);
+            let responseObj = {};
+            for (let field of targetFields) {
+              responseObj[field] = newMsg[field];
+            }
+            responseObj.timeTicket = req.body.timeTicket;
+            req.io.sockets.to(req.body.roomId).emit("room_msg", responseObj);
           });
           res.json({
             status: "success",
