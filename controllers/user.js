@@ -1,5 +1,17 @@
+const validator = require("validator");
 const UserModel = require("../models/User");
 const userUtils = require("../utils/user");
+
+const hasEmptyField = (body, requiredList) => {
+  for (let field of requiredList) {
+    if (validator.isEmpty(body[field])) return true;
+  }
+  return false;
+};
+
+const getError = errorObj => {
+  return errorObj.message || "Validation Error";
+};
 
 module.exports = {
   checkCurrentUser: function(req, res, next) {
@@ -9,28 +21,52 @@ module.exports = {
       value: true
     });
   },
-  create: function(req, res, next) {
-    UserModel.create(
-      {
-        fullName: req.body.fullName,
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        email: req.body.email,
-        password: req.body.password
-      },
-      function(err, result) {
-        if (err) next(err);
-        else
-          res.json({
-            status: "success",
-            message: "User added successfully!!!",
-            value: null
-          });
-      }
-    );
+  create: async function(req, res, next) {
+    if (
+      hasEmptyField(req.body, [
+        "email",
+        "password",
+        "username",
+        "firstName",
+        "lastName"
+      ])
+    )
+      return res.send("EMPTY_FIELDS");
+    try {
+      const userWithUserName = UserModel.findOne({ email: req.body.username });
+      if (!userWithUserName)
+        return res.status(400).json({
+          status: "error",
+          message: "Username has been used",
+          value: null
+        });
+      const userWithEmail = UserModel.findOne({ email: req.body.email });
+      if (!userWithEmail)
+        return res.status(400).json({
+          status: "error",
+          message: "Email has been used",
+          value: null
+        });
+      const newUser = await UserModel.create({
+        ...req.body
+      });
+      return res.json({
+        status: "success",
+        message: "User added successfully!!!",
+        value: null
+      });
+    } catch (error) {
+      if (error)
+        return res.status(400).json({
+          status: "error",
+          message: getError(error),
+          value: null
+        });
+    }
   },
   authenticate: async function(req, res, next) {
-    if (!req.body.email || !req.body.password) return res.send("EMPTY_FIELDS");
+    if (hasEmptyField(req.body, ["email", "password"]))
+      return res.send("EMPTY_FIELDS");
     try {
       const user = await UserModel.findOne({ email: req.body.email });
       if (!user)
