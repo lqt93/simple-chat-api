@@ -1,8 +1,13 @@
 module.exports = function(io) {
   io.on("connection", socket => {
-    console.log("-------------\nan user connected");
+    console.log(`-------------\n${socket.id} connected`);
     socket.on("join_room", roomId => {
       socket.join(roomId);
+    });
+
+    socket.on("leave_room", roomId => {
+      console.log("leave room", roomId);
+      socket.leave(roomId);
     });
 
     socket.on("send_message_to_room", (roomId, msg) => {
@@ -11,7 +16,7 @@ module.exports = function(io) {
     });
 
     socket.on("disconnect", () => {
-      console.log("user disconnected");
+      console.log(`${socket.id} disconnected`);
     });
   });
 };
