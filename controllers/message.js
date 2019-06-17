@@ -24,7 +24,7 @@ module.exports = {
         type: req.body.type,
         value: req.body.value,
         room: req.body.roomId,
-        owner: req.body.userId
+        owner: req.userId
       },
       function(err, result) {
         if (err) next(err);

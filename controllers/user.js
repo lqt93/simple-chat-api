@@ -9,11 +9,61 @@ const hasEmptyField = (body, requiredList) => {
   return false;
 };
 
+const hasAnyAllowedField = (body, allowedList) => {
+  for (let field of allowedList) {
+    if (body.hasOwnProperty(field)) return true;
+  }
+  return false;
+};
+
 const getError = errorObj => {
   return errorObj.message || "Validation Error";
 };
 
 module.exports = {
+  update: async function(req, res, next) {
+    const allowedFields = ["username", "firstName", "lastName", "password"];
+    if (!hasAnyAllowedField(req.body, allowedFields))
+      return res.status(400).json({
+        status: "error",
+        message: "No correct field to update",
+        value: null
+      });
+
+    try {
+      if (req.body.hasOwnProperty("username")) {
+        const userWithUsername = await UserModel.findOne({
+          username: req.body.username
+        });
+
+        if (userWithUsername)
+          return res.status(400).json({
+            status: "error",
+            message: "Username is used",
+            value: null
+          });
+      }
+
+      const user = await UserModel.findOne({
+        _id: req.userId
+      });
+      for (let field of allowedFields) {
+        if (req.body[field]) user[field] = req.body[field];
+      }
+      const updatedUser = await user.save();
+      res.json({
+        status: "success",
+        message: "Updated user",
+        value: userUtils.getCleanUser(updatedUser)
+      });
+    } catch (err) {
+      res.status(400).json({
+        status: "error",
+        message: err,
+        value: null
+      });
+    }
+  },
   checkCurrentUser: function(req, res, next) {
     res.json({
       status: "success",
@@ -31,7 +81,11 @@ module.exports = {
         "lastName"
       ])
     )
-      return res.send("EMPTY_FIELDS");
+      return res.status(400).json({
+        status: "error",
+        message: "One required field is empty",
+        value: null
+      });
     try {
       const userWithUserName = UserModel.findOne({ email: req.body.username });
       if (!userWithUserName)
@@ -66,7 +120,11 @@ module.exports = {
   },
   authenticate: async function(req, res, next) {
     if (hasEmptyField(req.body, ["email", "password"]))
-      return res.send("EMPTY_FIELDS");
+      return res.status(400).json({
+        status: "error",
+        message: "One required field is empty",
+        value: null
+      });
     try {
       const user = await UserModel.findOne({ email: req.body.email });
       if (!user)
