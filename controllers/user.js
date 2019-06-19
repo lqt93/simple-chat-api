@@ -21,6 +21,53 @@ const getError = errorObj => {
 };
 
 module.exports = {
+  changePassword: async function(req, res, next) {
+    const allowedFields = ["oldPassword", "newPassword"];
+    if (!hasAnyAllowedField(req.body, allowedFields))
+      return res.status(400).json({
+        status: "error",
+        message: "Missing field's value",
+        value: null
+      });
+
+    try {
+      const user = await UserModel.findOne({
+        _id: req.userId
+      });
+
+      if (!user)
+        return res.status(400).json({
+          status: "error",
+          message: "User not found",
+          value: null
+        });
+
+      const isMatch = await user.comparePassword(req.body.oldPassword);
+
+      if (!isMatch)
+        return res.status(400).json({
+          status: "error",
+          message: "Unauthorized",
+          value: null
+        });
+
+      user.password = req.body.newPassword;
+
+      const updatedUser = await user.save();
+
+      res.json({
+        status: "success",
+        message: "New password saved",
+        value: null
+      });
+    } catch (err) {
+      res.status(400).json({
+        status: "error",
+        message: String(err),
+        value: null
+      });
+    }
+  },
   update: async function(req, res, next) {
     const allowedFields = ["username", "firstName", "lastName", "password"];
     if (!hasAnyAllowedField(req.body, allowedFields))
