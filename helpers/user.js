@@ -8,8 +8,12 @@ module.exports = {
       decoded
     ) {
       if (err) {
-        res.json({ status: "error", message: err.message, value: null });
+        res
+          .status(401)
+          .send({ status: "error", message: err.message, value: null });
       } else {
+        //
+        console.log(decoded);
         // add user id to request
         req.userId = decoded._id;
         next();

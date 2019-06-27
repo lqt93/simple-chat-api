@@ -8,7 +8,7 @@ let friendShipSchema = new mongoose.Schema({
   friend: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   status: {
     type: String,
-    default: "waiting"
+    default: "new"
   },
   watched: Boolean
 });

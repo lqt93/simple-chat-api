@@ -1,5 +1,6 @@
 const validator = require("validator");
 const UserModel = require("../models/User");
+const FriendshipModel = require("../models/Friendship");
 const userUtils = require("../utils/user");
 
 const hasEmptyField = (body, requiredList) => {
@@ -21,12 +22,69 @@ const getError = errorObj => {
 };
 
 module.exports = {
+  findUsers: async (req, res, next) => {
+    const allowedFields = ["keyword"];
+    if (!hasAnyAllowedField(req.query, allowedFields))
+      return res.status(400).json({
+        status: "error",
+        message: "Missing field",
+        value: null
+      });
+
+    try {
+      const keyword = req.query.keyword;
+      const isEmail = validator.isEmail(keyword);
+      let searchTarget = {},
+        fieldOptions = "";
+      if (!isEmail) {
+        searchTarget = {
+          username: new RegExp(keyword, "i")
+        };
+        fieldOptions = "fullName username";
+      } else {
+        searchTarget = {
+          email: new RegExp(keyword, "i")
+        };
+        fieldOptions = "fullName email";
+      }
+      searchTarget._id = { $ne: req.userId };
+      let users = await UserModel.find(searchTarget, fieldOptions).limit(10);
+
+      const promises = users.map(async user => {
+        const friendship = await FriendshipModel.findOne({
+          owner: req.userId,
+          friend: user._id
+        });
+        let newUser = {};
+        for (let field of ["fullName", "email", "_id", "username"]) {
+          newUser[field] = user[field];
+        }
+        newUser.isFriend = !!friendship && friendship.status === "linked";
+        newUser.isRequested = !!friendship && friendship.status === "waiting";
+        newUser.friendship = friendship && friendship._id;
+        return newUser;
+      });
+
+      const results = await Promise.all(promises);
+      res.json({
+        status: "success",
+        message: "Found users",
+        value: results
+      });
+    } catch (error) {
+      res.status(400).json({
+        status: "error",
+        message: String(error),
+        value: null
+      });
+    }
+  },
   changePassword: async function(req, res, next) {
     const allowedFields = ["oldPassword", "newPassword"];
     if (!hasAnyAllowedField(req.body, allowedFields))
       return res.status(400).json({
         status: "error",
-        message: "Missing field's value",
+        message: "Missing field",
         value: null
       });
 
@@ -60,10 +118,10 @@ module.exports = {
         message: "New password saved",
         value: null
       });
-    } catch (err) {
+    } catch (error) {
       res.status(400).json({
         status: "error",
-        message: String(err),
+        message: String(error),
         value: null
       });
     }
@@ -103,10 +161,10 @@ module.exports = {
         message: "Updated user",
         value: userUtils.getCleanUser(updatedUser)
       });
-    } catch (err) {
+    } catch (error) {
       res.status(400).json({
         status: "error",
-        message: err,
+        message: error,
         value: null
       });
     }
@@ -197,8 +255,8 @@ module.exports = {
           value: null
         });
       }
-    } catch (err) {
-      next(err);
+    } catch (error) {
+      next(error);
     }
   }
 };

@@ -1,19 +1,20 @@
 const FriendshipModel = require("../models/Friendship");
+const UserModel = require("../models/User");
 
-const STATUS_VALUES = ["waiting", "available", "blocked"];
+const STATUS_VALUES = ["waiting", "linked", "blocked", "new", "canceled"];
 
 module.exports = {
   create: async (req, res, next) => {
-    const { friendId } = req.body;
-    if (!friendId)
+    const { friendId, status } = req.body;
+    if (!friendId && !status)
       return res.status(400).json({
         status: "error",
-        message: "Require friend's id",
+        message: "Require friend's id and friendship's status",
         value: null
       });
 
     try {
-      const friend = await User.findOne({
+      const friend = await UserModel.findOne({
         _id: friendId
       });
 
@@ -26,7 +27,8 @@ module.exports = {
 
       const friendship = await FriendshipModel.create({
         owner: req.userId,
-        friend: friendId
+        friend: friendId,
+        status: status
       });
 
       return res.json({
@@ -87,7 +89,7 @@ module.exports = {
 
       return res.json({
         status: "success",
-        message: "Friendship available",
+        message: "Friendship updated",
         value: null
       });
     } catch (err) {

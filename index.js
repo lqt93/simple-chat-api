@@ -31,7 +31,11 @@ require("./controllers/socket")(io);
 app.use("/users", require("./routes/users"));
 app.use("/rooms", UserHelpers.validateUser, require("./routes/rooms"));
 app.use("/messages", UserHelpers.validateUser, require("./routes/messages"));
-
+app.use(
+  "/friendships",
+  UserHelpers.validateUser,
+  require("./routes/friendships")
+);
 // UI experiment
 app.get("/experiment", (req, res) => {
   res.sendFile(__dirname + "/client/index.html");
