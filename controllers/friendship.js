@@ -4,12 +4,76 @@ const UserModel = require("../models/User");
 const STATUS_VALUES = ["waiting", "linked", "blocked", "new", "canceled"];
 
 module.exports = {
+  getYourFriends: async (req, res, next) => {
+    try {
+      const friendships = await FriendshipModel.find({
+        owner: req.userId,
+        status: "linked"
+      })
+        .populate("friend", "fullName username email")
+        .exec();
+
+      friendships.map(friendship => {
+        return friendship.friend;
+      });
+
+      return res.json({
+        status: "success",
+        message: "Get requests",
+        value: friendships
+      });
+    } catch (error) {
+      res.status(400).json({
+        status: "error",
+        message: String(error),
+        value: null
+      });
+    }
+  },
+  getFriendRequest: async (req, res, next) => {
+    try {
+      const friendships = await FriendshipModel.find({
+        friend: req.userId,
+        status: "waiting"
+      })
+        .populate("friend", "fullName username email")
+        .exec();
+
+      friendships.map(friendship => {
+        return friendship.friend;
+      });
+
+      return res.json({
+        status: "success",
+        message: "Get requests",
+        value: friendships
+      });
+    } catch (error) {
+      res.status(400).json({
+        status: "error",
+        message: String(error),
+        value: null
+      });
+    }
+  },
   create: async (req, res, next) => {
     const { friendId, status } = req.body;
     if (!friendId && !status)
       return res.status(400).json({
         status: "error",
         message: "Require friend's id and friendship's status",
+        value: null
+      });
+
+    const checkFriendship = await FriendshipModel.findOne({
+      owner: req.userId,
+      friend: friendId
+    });
+
+    if (checkFriendship)
+      return res.status(400).json({
+        status: "error",
+        message: "Friendship created",
         value: null
       });
 
@@ -25,6 +89,8 @@ module.exports = {
           value: null
         });
 
+      console.log("status", status);
+
       const friendship = await FriendshipModel.create({
         owner: req.userId,
         friend: friendId,
@@ -34,7 +100,7 @@ module.exports = {
       return res.json({
         status: "success",
         message: "Request sent",
-        value: null
+        value: friendship
       });
     } catch (err) {
       res.status(400).json({
@@ -75,15 +141,17 @@ module.exports = {
         _id: friendshipId
       });
 
+      // updated friendship from requester with 'linked'
       if (status) friendship.status = status;
       if (typeof watched === "boolean") friendship.watched = watched;
-
       const updatedFriendship = await friendship.save();
 
-      if (status === "available") {
+      // accepted a friend's request then create a friendship for accepter with this requester
+      if (status === "linked") {
         const newFriend = await FriendshipModel.create({
-          owner: friendship.friend,
-          friend: req.userId
+          owner: req.userId,
+          friend: friendship.owner,
+          status: "linked"
         });
       }
 
@@ -116,14 +184,16 @@ module.exports = {
         _id: friendshipId
       });
 
-      const delFriendshipFromFriend = await FriendshipModel.deleteOne({
-        owner: currentFriendship.friend,
-        friend: req.userId
-      });
+      if (currentFriendship) {
+        const delFriendshipFromFriend = await FriendshipModel.deleteOne({
+          owner: currentFriendship.friend,
+          friend: req.userId
+        });
 
-      const delFriendshipFromOwner = await FriendshipModel.deleteOne({
-        _id: currentFriendship._id
-      });
+        const delFriendshipFromOwner = await FriendshipModel.deleteOne({
+          _id: currentFriendship._id
+        });
+      }
 
       res.json({
         status: "success",
