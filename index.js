@@ -27,19 +27,20 @@ app.use(function(req, res, next) {
 });
 require("./controllers/socket")(io);
 
-// Routes
-app.use("/users", require("./routes/users"));
-app.use("/rooms", UserHelpers.validateUser, require("./routes/rooms"));
-app.use("/messages", UserHelpers.validateUser, require("./routes/messages"));
-app.use(
-  "/friendships",
-  UserHelpers.validateUser,
-  require("./routes/friendships")
-);
 // UI experiment
 app.get("/experiment", (req, res) => {
   res.sendFile(__dirname + "/client/index.html");
 });
+
+// Routes
+app.use("/users", require("./routes/users"));
+
+// Validate authenticated user
+app.use(UserHelpers.validateUser);
+app.use("/rooms", require("./routes/rooms"));
+app.use("/room_participants", require("./routes/room_participants"));
+app.use("/messages", require("./routes/messages"));
+app.use("/friendships", require("./routes/friendships"));
 
 const PORT = process.env.PORT || 8000;
 
