@@ -2,9 +2,24 @@ const mongoose = require("mongoose");
 const timestampPlugin = require("./plugins/timestamp");
 
 let roomSchema = new mongoose.Schema({
-  type: String,
+  type: {
+    type: String,
+    default: "direct" // direct / group
+  },
   name: String,
-  members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }]
+  status: {
+    type: String,
+    default: "active"
+  },
+  creator: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  },
+  receiver: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  },
+  members: [{ type: mongoose.Schema.Types.ObjectId, ref: "RoomParticipant" }]
 });
 
 roomSchema.plugin(timestampPlugin);

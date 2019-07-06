@@ -1,7 +1,41 @@
 const RoomModel = require("../models/Room");
+const RoomParticipantModel = require("../models/RoomParticipant");
 const MessageModel = require("../models/Message");
 
 module.exports = {
+  getUserPrivateRooms: async (req, res, next) => {
+    try {
+      const rooms = await RoomParticipantModel.find(
+        { user: req.userId },
+        "_id room"
+      )
+        .populate({
+          path: "room",
+          model: "Room",
+          select: "_id name members",
+          populate: {
+            path: "members",
+            model: "User",
+            select: "_id fullName"
+          }
+        })
+        .exec();
+
+      res.json({
+        status: "success",
+        message: "Found Rooms",
+        value: {
+          rooms: rooms
+        }
+      });
+    } catch (error) {
+      return res.status(400).json({
+        status: "error",
+        message: String(error),
+        value: null
+      });
+    }
+  },
   getRoomInfo: function(req, res, next) {
     const roomId = req.params.id;
     if (!roomId)
@@ -86,28 +120,53 @@ module.exports = {
       }
     );
   },
-  create: function(req, res, next) {
-    if (!req.body.type || !req.body.name)
+  create: async (req, res, next) => {
+    const members = req.body.members;
+    const roomName = req.body.name;
+    if (!members)
       return res.status(400).json({
         status: "error",
-        message: "Require type and name of room",
+        message: "Missing required fields",
         value: null
       });
-    RoomModel.create(
-      {
-        type: req.body.type,
-        name: req.body.name
-      },
-      function(err, result) {
-        if (err) next(err);
-        else
-          res.json({
-            status: "success",
-            message: "Room created",
-            value: null
-          });
-      }
-    );
+    const roomType = "direct";
+    if (members.length > 1) {
+      roomType = "group";
+    }
+    try {
+      const newRoom = await RoomModel.create({
+        creator: req.userId,
+        type: roomType,
+        name: roomName,
+        members: members
+      });
+
+      RoomParticipantModel.create({
+        user: req.userId,
+        room: newRoom._id
+      });
+
+      const promises = members.map(async member => {
+        const roomParticipant = await RoomParticipantModel.create({
+          user: member,
+          room: newRoom._id
+        });
+        return roomParticipant;
+      });
+      const creatingRoomParticipants = await Promise.all(promises);
+
+      res.json({
+        status: "success",
+        message: "Room created",
+        value: newRoom
+      });
+    } catch (error) {
+      res.status(400).json({
+        status: "error",
+        message: String(error),
+        value: null
+      });
+    }
   },
   edit: function(req, res, next) {},
   delete: function(req, res, next) {}
