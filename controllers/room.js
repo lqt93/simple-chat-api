@@ -7,7 +7,11 @@ module.exports = {
     try {
       const rooms = await RoomParticipantModel.find(
         { user: req.userId },
-        "_id room"
+        "_id room",
+        {
+          sort: { createdAt: -1 },
+          limit: 15
+        }
       )
         .populate({
           path: "room",
