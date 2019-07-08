@@ -3,6 +3,49 @@ const RoomParticipantModel = require("../models/RoomParticipant");
 const MessageModel = require("../models/Message");
 
 module.exports = {
+  getSinglePrivateRoom: async (req, res, next) => {
+    try {
+      const targetRoomId = req.params.id;
+      if (!targetRoomId)
+        return res.status(400).json({
+          status: "error",
+          message: "Require room's id",
+          value: null
+        });
+
+      const room = await RoomParticipantModel.findOne({
+        user: req.userId,
+        room: targetRoomId
+      })
+        .populate({
+          path: "room",
+          model: "Room",
+          select: "_id name members",
+          populate: {
+            path: "members",
+            model: "User",
+            select: "_id fullName"
+          }
+        })
+        .exec();
+
+      res.json({
+        status: "success",
+        message: room ? "Found Room" : "Not found",
+        value: room
+          ? {
+              room: room
+            }
+          : null
+      });
+    } catch (error) {
+      return res.status(400).json({
+        status: "error",
+        message: String(error),
+        value: null
+      });
+    }
+  },
   getUserPrivateRooms: async (req, res, next) => {
     try {
       const rooms = await RoomParticipantModel.find(
