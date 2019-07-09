@@ -180,6 +180,7 @@ module.exports = {
     if (members.length > 1) {
       roomType = "group";
     }
+    members = members.push(req.userId);
     try {
       const newRoom = await RoomModel.create({
         creator: req.userId,
