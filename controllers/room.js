@@ -167,13 +167,42 @@ module.exports = {
       }
     );
   },
+  searchExistRoom: async (req, res, next) => {
+    try {
+      let checkingMembers = req.body.members;
+      checkingMembers.push(req.userId);
+      const room = await RoomModel.findOne({
+        creator: req.userId,
+        members: {
+          $all: checkingMembers
+        }
+      });
+      if (room && room._id) {
+        res.json({
+          status: "warning",
+          message: "Room existed",
+          value: room
+        });
+      } else {
+        next();
+      }
+    } catch (error) {
+      console.log("error", error);
+      res.status(400).json({
+        status: "error",
+        message: String(error),
+        value: null
+      });
+    }
+  },
   create: async (req, res, next) => {
     const members = req.body.members;
     const roomName = req.body.name;
-    if (!members)
+    const firstMsg = req.body.firstMsg;
+    if (!members || !firstMsg)
       return res.status(400).json({
         status: "error",
-        message: "Missing required fields",
+        message: "Missing required fields: members|firstMsg",
         value: null
       });
     const roomType = "direct";
@@ -202,6 +231,12 @@ module.exports = {
         return roomParticipant;
       });
       const creatingRoomParticipants = await Promise.all(promises);
+
+      const newMsg = await MessageModel.create({
+        value: firstMsg,
+        room: newRoom._id,
+        owner: req.userId
+      });
 
       res.json({
         status: "success",

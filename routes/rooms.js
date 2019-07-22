@@ -8,7 +8,7 @@ router.get("/private/:id", roomController.getSinglePrivateRoom);
 router.get("/public", roomController.getPublicRooms);
 router.get("/:id", roomController.getRoomInfo);
 router.get("/:id/messages", roomController.getMessages);
-router.post("/", roomController.create);
+router.post("/", roomController.searchExistRoom, roomController.create);
 router.put("/", roomController.edit);
 router.delete("/", roomController.delete);
 
