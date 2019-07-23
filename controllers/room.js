@@ -169,15 +169,19 @@ module.exports = {
   },
   searchExistRoom: async (req, res, next) => {
     try {
-      let checkingMembers = req.body.members;
-      checkingMembers.push(req.userId);
       const room = await RoomModel.findOne({
         creator: req.userId,
         members: {
-          $all: checkingMembers
+          $all: req.body.members.concat(req.userId)
         }
       });
       if (room && room._id) {
+        const firstMsg = req.body.firstMsg;
+        const newMsg = await MessageModel.create({
+          value: firstMsg,
+          room: room._id,
+          owner: req.userId
+        });
         res.json({
           status: "warning",
           message: "Room existed",
@@ -196,7 +200,7 @@ module.exports = {
     }
   },
   create: async (req, res, next) => {
-    const members = req.body.members;
+    let members = req.body.members;
     const roomName = req.body.name;
     const firstMsg = req.body.firstMsg;
     if (!members || !firstMsg)
@@ -205,32 +209,48 @@ module.exports = {
         message: "Missing required fields: members|firstMsg",
         value: null
       });
-    const roomType = "direct";
-    if (members.length > 1) {
-      roomType = "group";
-    }
-    members = members.push(req.userId);
     try {
+      let roomType = "direct";
+      if (members.length > 1) {
+        roomType = "group";
+      }
+
       const newRoom = await RoomModel.create({
         creator: req.userId,
         type: roomType,
         name: roomName,
-        members: members
+        members: members.concat(req.userId)
       });
 
-      RoomParticipantModel.create({
-        user: req.userId,
-        room: newRoom._id
-      });
-
-      const promises = members.map(async member => {
+      const promises = members.map(async memberId => {
         const roomParticipant = await RoomParticipantModel.create({
-          user: member,
+          user: memberId,
           room: newRoom._id
         });
         return roomParticipant;
       });
-      const creatingRoomParticipants = await Promise.all(promises);
+      const otherRoomParticipants = await Promise.all(promises);
+
+      const ownerRoomParticipant = await RoomParticipantModel.create({
+        user: req.userId,
+        room: newRoom._id
+      });
+      const populatedOwnderRoomParticipant = await RoomParticipantModel.findOne(
+        {
+          _id: ownerRoomParticipant._id
+        }
+      )
+        .populate({
+          path: "room",
+          model: "Room",
+          select: "_id name members",
+          populate: {
+            path: "members",
+            model: "User",
+            select: "_id fullName"
+          }
+        })
+        .exec();
 
       const newMsg = await MessageModel.create({
         value: firstMsg,
@@ -241,7 +261,7 @@ module.exports = {
       res.json({
         status: "success",
         message: "Room created",
-        value: newRoom
+        value: populatedOwnderRoomParticipant
       });
     } catch (error) {
       res.status(400).json({
