@@ -3,6 +3,64 @@ const RoomParticipantModel = require("../models/RoomParticipant");
 const MessageModel = require("../models/Message");
 
 module.exports = {
+  changeRoomName: async (req, res, next) => {
+    try {
+      const targetRoomId = req.params.id;
+      if (!targetRoomId)
+        return res.status(400).json({
+          status: "error",
+          message: "Require room's id",
+          value: null
+        });
+
+      const newName = req.body.newName;
+      if (newName === undefined)
+        return res.status(400).json({
+          status: "error",
+          message: "Missing name's value",
+          value: null
+        });
+
+      const targetRoom = await RoomModel.findOne({
+        _id: targetRoomId
+      });
+
+      targetRoom.name = newName;
+
+      const newRoom = await targetRoom.save();
+
+      const actionMsg = await MessageModel.create({
+        type: "action_name",
+        value: newName,
+        room: targetRoomId,
+        owner: req.userId
+      });
+
+      const populatedActionMsg = await MessageModel.findOne({
+        _id: actionMsg._id
+      })
+        .populate({
+          path: "owner",
+          model: "User",
+          select: "_id fullName"
+        })
+        .exec();
+
+      req.io.sockets.to(targetRoomId).emit("room_msg", populatedActionMsg);
+
+      res.json({
+        status: "success",
+        message: "Changed room's name",
+        value: newRoom
+      });
+    } catch (error) {
+      return res.status(400).json({
+        status: "error",
+        message: String(error),
+        value: null
+      });
+    }
+  },
   getSinglePrivateRoom: async (req, res, next) => {
     try {
       const targetRoomId = req.params.id;
