@@ -78,7 +78,7 @@ module.exports = {
         .populate({
           path: "room",
           model: "Room",
-          select: "_id name members",
+          select: "_id name members type creator",
           populate: {
             path: "members",
             model: "User",
@@ -90,11 +90,7 @@ module.exports = {
       res.json({
         status: "success",
         message: room ? "Found Room" : "Not found",
-        value: room
-          ? {
-              room: room
-            }
-          : null
+        value: !!room ? room : null
       });
     } catch (error) {
       return res.status(400).json({
